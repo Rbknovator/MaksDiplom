@@ -1,0 +1,40 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version — не менять
+VAGRANTFILE_API_VERSION = "2"
+
+# Имя проекта — используется в хостнеймах и сетях
+project_name = "multihostexample"
+
+# Основная конфигурация Vagrant
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  # Указываем базовый образ (Ubuntu 15.04)
+  config.vm.box = "wzurowski/vivid32"
+
+  # Список виртуальных машин с их IP
+  {
+    'ex01' => '172.22.22.101', # точка входа
+    'ex02' => '172.22.22.102', # требует ssh-доступа
+    'ex03' => '172.22.22.103', # содержит спрятанный ключ
+    'ex04' => '172.22.22.104', # доступен только по ключу
+  }.each do |app_name, ip_address|
+
+    # Настройка каждой VM по очереди
+    config.vm.define app_name do |node|
+      # Присваиваем хостнейм, чтобы было читаемо
+      node.vm.hostname = app_name + "." + project_name + ".dev"
+
+      # Назначаем приватный IP
+      node.vm.network :private_network, ip: ip_address
+
+      # Если существует файл provisioning/ex01.sh и т.п., подключаем его
+      if File.exist?("provisioning/#{app_name}.sh")
+        node.vm.provision "shell", path: "provisioning/#{app_name}.sh"
+      end
+    end
+  end
+
+  # Отключены hostmanager и ansible, так как ты используешь Windows
+end
